@@ -138,3 +138,7 @@ GitHub.sublime-settings
 
 # Media
 greatkart_template/
+
+# Static files
+lusan/static/
+static/
