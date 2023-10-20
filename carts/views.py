@@ -70,8 +70,8 @@ def cart(request, total=0, quantity=0, cart_items=None):
             total += (cart_item.product.price * cart_item.quantity)
             quantity += cart_item.quantity
         
-        iva = 0.19 * total
-        grand_total = total + iva
+        iva = round(0.19 * total, 2)
+        grand_total = round(total + iva, 2)
 
 
     except Cart.ObjectNotExist:
