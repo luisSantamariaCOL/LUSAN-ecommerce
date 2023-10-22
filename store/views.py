@@ -14,12 +14,16 @@ def store(request, category_slug=None):
     if category_slug:
         categories = get_object_or_404(Category, slug=category_slug)
         products = Product.objects.filter(category=categories, is_available=True)
+        number_of_paged_numbers = 3
     
     else:
         products = Product.objects.all().filter(is_available=True)
-        paginator = Paginator(products, 6) # second argument represents the number of items you want to show
-        page = request.GET.get('page') # capture the number of the store page
-        paged_products = paginator.get_page(page) # stores the number of items of paginator in the paged_products variable
+        number_of_paged_numbers = 6
+    
+    paginator = Paginator(products, number_of_paged_numbers) # second argument represents the number of items you want to show
+    page = request.GET.get('page') # capture the number of the store page
+    paged_products = paginator.get_page(page) # stores the number of items of paginator in the paged_products variable
+
 
     context = {
         'products': paged_products,
