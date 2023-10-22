@@ -14,6 +14,15 @@ def _cart_id(request):
     return current_session
 
 def add_cart(request, product_id):
+    color = ''
+    size = ''
+
+    if 'color' in request.GET:
+        color = request.GET['color']
+
+    if 'size' in request.GET:
+        size = request.GET['size']
+
 
     product = Product.objects.get(id=product_id) # get the product
 
