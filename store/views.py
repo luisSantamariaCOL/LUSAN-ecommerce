@@ -17,7 +17,7 @@ def store(request, category_slug=None):
         number_of_paged_numbers = 3
     
     else:
-        products = Product.objects.all().filter(is_available=True)
+        products = Product.objects.all().filter(is_available=True).order_by('id')
         number_of_paged_numbers = 6
     
     paginator = Paginator(products, number_of_paged_numbers) # second argument represents the number of items you want to show

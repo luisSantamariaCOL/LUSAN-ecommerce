@@ -1,0 +1,4 @@
+### Buenas practicas que aprendi con este proyecto
+
+- Siempre imaginar pruebas unitarias aplicables a cada funcionalidad que crees.
+- 

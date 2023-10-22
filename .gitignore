@@ -143,3 +143,7 @@ GreatKart Images/
 # Static files
 lusan/static/
 static/
+
+
+# Others
+pendientes.txt
