@@ -15,14 +15,12 @@ def _cart_id(request):
     return current_session
 
 def add_cart(request, product_id):
-    color = ''
-    size = ''
 
     # get the product
     product = Product.objects.get(id=product_id) 
     product_variation = []
 
-    # recieving size and colors in a dynamic way
+    # receiving size and colors in a dynamic way
     if request.method == 'POST':
         for item in request.POST:
             key = item
@@ -35,7 +33,7 @@ def add_cart(request, product_id):
                 pass
         
 
-
+    # get product variation
     try:
         cart = Cart.objects.get(cart_id=_cart_id(request)) # get the cart using the cart_id present in the session
         print(cart)
@@ -46,18 +44,25 @@ def add_cart(request, product_id):
 
     cart.save()
 
+    # get cart item
     try:
         cart_item = CartItem.objects.get(product=product, cart=cart)
-        cart_item.quantity += 1
-        cart_item.save()
-        
+
     except CartItem.DoesNotExist:
         cart_item = CartItem.objects.create(
             product = product,
-            quantity = 1,
+            quantity = 0,
             cart = cart,
         )
         
+    finally:
+
+        if len(product_variation) > 0:
+            cart_item.variations.clear()
+            for item in product_variation:
+                cart_item.variations.add(item)
+
+        cart_item.quantity += 1
         cart_item.save()
 
     return redirect('cart')
@@ -83,7 +88,7 @@ def remove_cart_item(request, product_id):
 def cart(request, total=0, quantity=0, cart_items=None):
 
     try:
-        tax = 0
+        iva = 0
         grand_total = 0
 
         cart = Cart.objects.get(cart_id=_cart_id(request))
