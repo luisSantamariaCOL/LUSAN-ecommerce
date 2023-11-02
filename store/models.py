@@ -47,4 +47,4 @@ class Variation(models.Model):
     objects = VariationManager() 
 
     def __str__(self):
-        return self.variation_category + " " + self.variation_value
+        return self.variation_category + " " + self.variation_value # ex 1: color White         ex 2: size Medium
