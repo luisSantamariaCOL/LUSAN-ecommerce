@@ -173,5 +173,37 @@ def cart(request, total=0, quantity=0, cart_items=None):
     return render(request, 'store/cart.html', context)
 
 
-def checkout(request):
-    return render(request, 'store/checkout.html')
+def checkout(request, total=0, quantity=0, cart_items=None):
+    # Initialize tax and grand total variables ('IVA' typically refers to a form of value-added tax).
+    iva = 0
+    grand_total = 0
+    
+    try:
+        # Retrieve the cart items for the current session's cart
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+
+        # Calculate total price and total quantity of items in the cart
+        for cart_item in cart_items:
+            total += (cart_item.product.price * cart_item.quantity)
+            quantity += cart_item.quantity
+        
+        # Calculate tax and grand total
+        iva = round(0.19 * total, 2)
+        grand_total = round(total + iva, 2)
+
+
+    except ObjectDoesNotExist:
+        # If the Cart does not exist, ignore and continue
+        pass
+
+    # Prepare the context with cart details
+    context = {
+        'total': total,
+        'quantity': quantity,
+        'cart_items': cart_items,
+        'iva': iva,
+        'grand_total' : grand_total,
+    }
+
+    return render(request, 'store/checkout.html', context)
