@@ -171,3 +171,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
 
     # Render the cart page with the context
     return render(request, 'store/cart.html', context)
+
+
+def checkout(request):
+    return render(request, 'store/checkout.html')
