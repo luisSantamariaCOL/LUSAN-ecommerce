@@ -3,7 +3,7 @@ from store.models import Product, Variation
 from .models import Cart, CartItem
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
-
+from django.contrib.auth.decorators import login_required
  
 # This is a utility function to get or create a unique cart_id in the user's session. 
 # It helps to track the user's cart without them needing to be logged in.
@@ -138,13 +138,17 @@ def remove_cart_item(request, product_id, cart_item_id):
 # This view displays the cart page with items the user has added
 def cart(request, total=0, quantity=0, cart_items=None):
     # Initialize tax and grand total variables ('IVA' typically refers to a form of value-added tax).
-    iva = 0
-    grand_total = 0
-    
     try:
-        # Retrieve the cart items for the current session's cart
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        iva = 0
+        grand_total = 0
+    
+        if request.user.is_authenticated:
+            # Retrieve the cart items for the current active user
+            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+        else:
+            # Retrieve the cart items for the current session's cart
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
 
         # Calculate total price and total quantity of items in the cart
         for cart_item in cart_items:
@@ -172,7 +176,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
     # Render the cart page with the context
     return render(request, 'store/cart.html', context)
 
-
+@login_required(login_url='login')
 def checkout(request, total=0, quantity=0, cart_items=None):
     # Initialize tax and grand total variables ('IVA' typically refers to a form of value-added tax).
     iva = 0
