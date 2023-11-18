@@ -13,6 +13,9 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
 
+from carts.views import _cart_id
+from carts.models import Cart, CartItem
+
 def register(request):
     # Handle user registration
     if request.method == 'POST':
@@ -73,6 +76,17 @@ def login(request):
 
         # Log the user in and redirect to dashboard
         if user.is_authenticated:
+            try:
+                cart = Cart.objects.get(cart_id=_cart_id(request))
+                is_cart_item_exists = CartItem.objects.filter(cart=cart).exists
+                if is_cart_item_exists:
+                    cart_item = CartItem.objects.filter(cart=cart)
+
+                    for item in cart_item:
+                        item.user = user
+                        item.save()
+            except:
+                pass
             auth.login(request, user)
             messages.success(request, 'You are now logged in.')
             return redirect('dashboard')
