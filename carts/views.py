@@ -18,62 +18,117 @@ def _cart_id(request):
 # This view function adds items to the cart.
 def add_cart(request, product_id):
 
+    current_user = request.user
+
     # Retrieve the product instance with the given product_id
     product = get_object_or_404(Product, id=product_id)
 
-    # Retrieve any variations of the product (like size or color)
-    product_variation = _get_product_variations_from_request(request, product) 
+    # If the user is authenticated
+    if current_user.is_authenticated:
+        # Retrieve any variations of the product (like size or color)
+        product_variation = _get_product_variations_from_request(request, product) 
 
-    # Try to get the Cart object for the current session, or create a new one if it doesn't exist
-    try:
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-    except Cart.DoesNotExist:
-        cart = Cart.objects.create(cart_id=_cart_id(request))
-    cart.save()
 
-    # Check if there are any CartItem instances with this product and cart
-    is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists
+        # Check if there are any CartItem instances with this product and the current user
+        is_cart_item_exists = CartItem.objects.filter(product=product, user=current_user).exists
 
-    # If the CartItem already exists, update or create new variations as necessary
-    if is_cart_item_exists:
-        cart_item = CartItem.objects.filter(product=product, cart=cart)
+        # If the CartItem already exists, update or create new variations as necessary
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.filter(product=product, user=current_user)
 
-        # This will hold the current variations and IDs for cart items
-        ex_var_list = []
-        id_list = []
+            # This will hold the current variations and IDs for cart items
+            ex_var_list = []
+            id_list = []
 
-        for item in cart_item:
-            existing_variation = item.variations.all()
-            ex_var_list.append(list(existing_variation))
-            id_list.append(item.id)
+            for item in cart_item:
+                existing_variation = item.variations.all()
+                ex_var_list.append(list(existing_variation))
+                id_list.append(item.id)
 
-        # If the current variations already exist in the cart, increase quantity
-        if product_variation in ex_var_list:
-            index = ex_var_list.index(product_variation)
-            item_id = id_list[index]
-            item = CartItem.objects.get(product=product, id=item_id)
-            item.quantity += 1
-            item.save()
+            # If the current variations already exist in the cart, increase quantity
+            if product_variation in ex_var_list:
+                index = ex_var_list.index(product_variation)
+                item_id = id_list[index]
+                item = CartItem.objects.get(product=product, id=item_id)
+                item.quantity += 1
+                item.save()
+            else:
+                # If not, create a new CartItem with the new variations
+                item = CartItem.objects.create(product=product, quantity=1, user=current_user)
+                if len(product_variation) > 0:
+                    item.variations.clear() # Clear any existing variations from the newly created CartItem
+                    item.variations.add(*product_variation) # Add the new variations to the CartItem's many-to-many field for variations
+                item.save()
+
         else:
-            # If not, create a new CartItem with the new variations
-            item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+            # If no CartItem exists, create a new CartItem instance with the given product and variations
+            cart_item = CartItem.objects.create(product = product, quantity = 1, user = current_user)
+            
             if len(product_variation) > 0:
-                item.variations.clear() # Clear any existing variations from the newly created CartItem
-                item.variations.add(*product_variation) # Add the new variations to the CartItem's many-to-many field for variations
-            item.save()
+                cart_item.variations.clear()
+                cart_item.variations.add(*product_variation)
 
+            cart_item.save()
+
+        # Redirect the user to the cart page
+        return redirect('cart')
+
+    # If the user is not authenticated
     else:
-        # If no CartItem exists, create a new CartItem instance with the given product and variations
-        cart_item = CartItem.objects.create(product = product, quantity = 1, cart = cart)
-        
-        if len(product_variation) > 0:
-            cart_item.variations.clear()
-            cart_item.variations.add(*product_variation)
 
-        cart_item.save()
+        # Retrieve any variations of the product (like size or color)
+        product_variation = _get_product_variations_from_request(request, product) 
 
-    # Redirect the user to the cart page
-    return redirect('cart')
+        # Try to get the Cart object for the current session, or create a new one if it doesn't exist
+        try:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+        except Cart.DoesNotExist:
+            cart = Cart.objects.create(cart_id=_cart_id(request))
+        cart.save()
+
+        # Check if there are any CartItem instances with this product and cart
+        is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists
+
+        # If the CartItem already exists, update or create new variations as necessary
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.filter(product=product, cart=cart)
+
+            # This will hold the current variations and IDs for cart items
+            ex_var_list = []
+            id_list = []
+
+            for item in cart_item:
+                existing_variation = item.variations.all()
+                ex_var_list.append(list(existing_variation))
+                id_list.append(item.id)
+
+            # If the current variations already exist in the cart, increase quantity
+            if product_variation in ex_var_list:
+                index = ex_var_list.index(product_variation)
+                item_id = id_list[index]
+                item = CartItem.objects.get(product=product, id=item_id)
+                item.quantity += 1
+                item.save()
+            else:
+                # If not, create a new CartItem with the new variations
+                item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+                if len(product_variation) > 0:
+                    item.variations.clear() # Clear any existing variations from the newly created CartItem
+                    item.variations.add(*product_variation) # Add the new variations to the CartItem's many-to-many field for variations
+                item.save()
+
+        else:
+            # If no CartItem exists, create a new CartItem instance with the given product and variations
+            cart_item = CartItem.objects.create(product = product, quantity = 1, cart = cart)
+            
+            if len(product_variation) > 0:
+                cart_item.variations.clear()
+                cart_item.variations.add(*product_variation)
+
+            cart_item.save()
+
+        # Redirect the user to the cart page
+        return redirect('cart')
 
 def _get_product_variations_from_request(request, product):
     """
