@@ -245,9 +245,13 @@ def checkout(request, total=0, quantity=0, cart_items=None):
     grand_total = 0
     
     try:
-        # Retrieve the cart items for the current session's cart
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        if request.user.is_authenticated:
+            # Retrieve the cart items for the current active user
+            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+        else:
+            # Retrieve the cart items for the current session's cart
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
 
         # Calculate total price and total quantity of items in the cart
         for cart_item in cart_items:

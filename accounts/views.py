@@ -16,6 +16,8 @@ from django.core.mail import EmailMessage
 from carts.views import _cart_id
 from carts.models import Cart, CartItem
 
+import requests # installed library
+
 def register(request):
     # Handle user registration
     if request.method == 'POST':
@@ -119,7 +121,19 @@ def login(request):
                 pass
             auth.login(request, user)
             messages.success(request, 'You are now logged in.')
-            return redirect('dashboard')
+            url = request.META.get('HTTP_REFERER') # grab the previous url from where you came
+            try:
+                query = requests.utils.urlparse(url).query 
+                # print('query -> ', query) # output ex: query -> next=/cart/checkout/
+                params = dict(x.split('=') for x in query.split('&'))
+                # print('params -> ', params) # output ex: params ->  {'next': '/cart/checkout/'}
+                if 'next' in params:
+                    next_page = params['next']
+                    return redirect(next_page)
+            except:
+                    return redirect('dashboard')
+
+
         else:
             # Show error message if credentials are invalid
             messages.error(request, 'Invalid login credentials.')
