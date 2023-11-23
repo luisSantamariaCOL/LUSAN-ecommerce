@@ -34,6 +34,7 @@ def place_order(request,  total = 0, quantity = 0):
             print(form.cleaned_data)
             # Store all the billing information inside Order Table
             data = Order()
+            data.user = current_user
             data.first_name     = form.cleaned_data['first_name']
             data.last_name      = form.cleaned_data['last_name']
             data.phone          = form.cleaned_data['phone']
@@ -54,10 +55,27 @@ def place_order(request,  total = 0, quantity = 0):
             day = int(datetime.date.today().strftime('%d'))
             d = datetime.date(year, month, day)
             current_date = d.strftime("%Y%m%d")
-            data.order_number = current_date + str(data.id) # 2023112101
+            order_number = current_date + str(data.id) # 2023112101
+            data.order_number = order_number
             data.save()
 
-            return redirect('checkout')
-        else: print(form.errors)
+            try:
+
+                order = get_object_or_404(Order, user=current_user, is_ordered=False, order_number=order_number)
+            except Exception as e:
+                print("An error happened in the process of getting the order:", e)
+
+            context = {
+                'order': order,
+                'cart_items': cart_items,
+                'total': total,
+                'tax': iva,
+                'grand_total': grand_total,
+            }
+
+            return render(request, 'orders/payments.html', context)
+        
+        else: 
+            print(form.errors)
     else:
         return redirect('checkout')
